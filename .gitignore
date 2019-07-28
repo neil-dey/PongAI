@@ -1,0 +1,4 @@
+bin/
+.settings/
+.cache-main
+src/pong/*.txt
