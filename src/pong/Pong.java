@@ -88,7 +88,7 @@ public class Pong extends Applet implements Runnable, KeyListener {
 
                 botMove();
                 robotMove(output);
-                
+
                 p1.move();
                 p2.move();
                 ball.move();
