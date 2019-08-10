@@ -47,7 +47,7 @@ public class Pong extends Applet implements Runnable, KeyListener {
         p2Score = 0;
         timeSinceLastScore = System.currentTimeMillis();
 
-        neuralNet = new Perceptron(5, 0.1);
+        neuralNet = new Perceptron(2, 1);
 
         thread = new Thread(this);
         thread.start();
@@ -75,16 +75,27 @@ public class Pong extends Applet implements Runnable, KeyListener {
             e1.printStackTrace();
         }
 
-        List<double[]> inputs = new ArrayList<>();
-        List<Integer> desiredOutputs = new ArrayList<>();
+        int count = 0;
+        long startTime = System.currentTimeMillis();
         while (true) {
             try {
-
-                double[] input = new double[] { ball.getX(), ball.getY(), ball.getXVel(), ball.getYVel(), p2.getY() };
-                int output = neuralNet.classify(input);
-
-                inputs.add(input);
-                desiredOutputs.add(idealMove());
+                // double[] input = new double[] { ball.getX(), ball.getY(), ball.getXVel(),
+                // ball.getYVel(), p2.getY() };
+                double[] input = new double[] { ball.getY(), p2.getY() };
+                int output;
+                if (System.currentTimeMillis() - startTime > 1800000L) {
+                    // count != 0 && neuralNet.iteratedError() > 0.01 &&
+                    // neuralNet.iteratedError() < 0.02) {
+                    output = neuralNet.classify(input);
+                    if (count == 1) {
+                        System.out.println(Arrays.toString(neuralNet.weights()));
+                        count = 2;
+                    }
+                } else {
+                    output = neuralNet.classifyAndUpdate(input, idealMove());
+                    System.out.println(neuralNet.iteratedError());
+                    count = 1;
+                }
 
                 botMove();
                 robotMove(output);
@@ -101,7 +112,6 @@ public class Pong extends Applet implements Runnable, KeyListener {
                     fw.write(p1Score + "-" + p2Score + "\n");
                     ball = new Ball();
 
-                    neuralNet.update(inputs, desiredOutputs);
                     System.out.println(neuralNet.iteratedError());
                     fw.write(Arrays.toString(neuralNet.weights()));
                 } else if (ball.getX() > WIDTH + Ball.getRadius()) {
@@ -110,8 +120,6 @@ public class Pong extends Applet implements Runnable, KeyListener {
                     fw.write(p1Score + "-" + p2Score + "\n");
                     ball = new Ball();
 
-                    neuralNet.update(inputs, desiredOutputs);
-                    System.out.println(inputs.size() + " " + neuralNet.iteratedError());
                     fw.write(Arrays.toString(neuralNet.weights()));
                 }
 
