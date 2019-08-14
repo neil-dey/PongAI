@@ -16,7 +16,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import ai.BinaryClassifier;
 import ai.Perceptron;
+import ai.SVM;
 import scala.Int;
 
 public class Pong extends Applet implements Runnable, KeyListener {
@@ -31,9 +33,7 @@ public class Pong extends Applet implements Runnable, KeyListener {
 
     public static int p1Score, p2Score;
 
-    private Writer fw;
-
-    private Perceptron neuralNet;
+    private BinaryClassifier neuralNet;
 
     public void init() {
         this.resize(WIDTH, HEIGHT);
@@ -47,7 +47,7 @@ public class Pong extends Applet implements Runnable, KeyListener {
         p2Score = 0;
         timeSinceLastScore = System.currentTimeMillis();
 
-        neuralNet = new Perceptron(2, 1);
+        neuralNet = new SVM(2, 1);
 
         thread = new Thread(this);
         thread.start();
@@ -67,14 +67,6 @@ public class Pong extends Applet implements Runnable, KeyListener {
     }
 
     public void run() {
-        try {
-            fw = new BufferedWriter(new OutputStreamWriter(
-                    new FileOutputStream("C:\\Users\\neild\\eclipse-workspace\\PongAI\\src\\pong\\log1.txt"), "utf-8"));
-        } catch (UnsupportedEncodingException | FileNotFoundException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-
         int count = 0;
         long startTime = System.currentTimeMillis();
         while (true) {
@@ -83,7 +75,7 @@ public class Pong extends Applet implements Runnable, KeyListener {
                 // ball.getYVel(), p2.getY() };
                 double[] input = new double[] { ball.getY(), p2.getY() };
                 int output;
-                if (System.currentTimeMillis() - startTime > 1800000L) {
+                if (System.currentTimeMillis() - startTime > 1 * 72000L) {
                     // count != 0 && neuralNet.iteratedError() > 0.01 &&
                     // neuralNet.iteratedError() < 0.02) {
                     output = neuralNet.classify(input);
@@ -93,7 +85,6 @@ public class Pong extends Applet implements Runnable, KeyListener {
                     }
                 } else {
                     output = neuralNet.classifyAndUpdate(input, idealMove());
-                    System.out.println(neuralNet.iteratedError());
                     count = 1;
                 }
 
@@ -109,26 +100,16 @@ public class Pong extends Applet implements Runnable, KeyListener {
                 if (ball.getX() < -1 * Ball.getRadius()) {
                     p2Score += 1;
                     System.out.println(p1Score + "-" + p2Score);
-                    fw.write(p1Score + "-" + p2Score + "\n");
                     ball = new Ball();
-
-                    System.out.println(neuralNet.iteratedError());
-                    fw.write(Arrays.toString(neuralNet.weights()));
                 } else if (ball.getX() > WIDTH + Ball.getRadius()) {
                     p1Score += 1;
                     System.out.println(p1Score + "-" + p2Score);
-                    fw.write(p1Score + "-" + p2Score + "\n");
                     ball = new Ball();
-
-                    fw.write(Arrays.toString(neuralNet.weights()));
                 }
 
                 this.repaint();
                 Thread.sleep(10);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
@@ -155,13 +136,6 @@ public class Pong extends Applet implements Runnable, KeyListener {
         case KeyEvent.VK_DOWN:
             p2.setDownAccel(true);
             break;
-        case KeyEvent.VK_SPACE:
-            try {
-                fw.flush();
-            } catch (IOException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
         }
 
     }
@@ -210,12 +184,12 @@ public class Pong extends Applet implements Runnable, KeyListener {
 
     }
 
-    private int[] idealMove_Hard() {
+    private int idealMove_Hard() {
         if (ball.getXVel() < 0) {
             if (p2.getY() + Paddle.getHeight() / 2.0 < Pong.HEIGHT / 2) {
-                return new int[] { 0, 1 };
+                return 0;
             } else {
-                return new int[] { 1, 0 };
+                return 1;
             }
         }
 
@@ -229,9 +203,9 @@ public class Pong extends Applet implements Runnable, KeyListener {
         }
 
         if (p2.getY() + Paddle.getHeight() / 2.0 > finalY) {
-            return new int[] { 1, 0 };
+            return 1;
         } else {
-            return new int[] { 0, 1 };
+            return 0;
         }
     }
 
@@ -239,7 +213,7 @@ public class Pong extends Applet implements Runnable, KeyListener {
         if (p2.getY() + Paddle.getHeight() / 2.0 > ball.getY()) {
             return 1;
         } else {
-            return 0;
+            return -1;
         }
     }
 
